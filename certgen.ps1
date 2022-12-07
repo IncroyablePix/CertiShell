@@ -168,7 +168,7 @@ Function CreateCertfile()
 		[Parameter(Mandatory = $false, Position = 2)]
 		[string] $FriendlyName,
 		[Parameter(Mandatory = $false, Position = 3)]
-		[Microsoft.CertificateServices.Commands.Certificate] $ChainCertificate,
+        $ChainCertificate,
 		[Parameter(Mandatory = $true, Position = 4)]
 		[string] $Type,
 		[Parameter(Mandatory = $true, Position = 5)]
@@ -178,6 +178,8 @@ Function CreateCertfile()
 	$CertificatePath = ""
 	$PrivateKeyPath = ""
 	$CertStoreLocation = ""
+    $CertUsages = @()
+    # @("CertSign","CRLSign", "DataEncipherment", "DecipherOnly", "DigitalSignature", "EncipherOnly","KeyAgreement", "KeyEncipherment", "NonRepudiation");
 
 	if($Type -eq "CA")
 	{
@@ -185,6 +187,7 @@ Function CreateCertfile()
 		$CertificatePath = "$($pwd.Path)\$($Name).cer"
 		$PrivateKeyPath = "$($pwd.Path)\$($Name).pfx"
 		$CertStoreLocation = "Cert:\LocalMachine\My" # Then move to... "Cert:\LocalMachine\Root"
+        $CertUsages = @("CertSign")
 	}
 	elseif($Type -eq "Intermediate")
 	{
@@ -192,6 +195,7 @@ Function CreateCertfile()
 		$CertificatePath = "$($pwd.Path)\$($Name).cer"
 		$PrivateKeyPath = "$($pwd.Path)\$($Name).pfx"
 		$CertStoreLocation = "Cert:\LocalMachine\Intermediate"
+        $CertUsages = @("CertSign")
 	}
 	else
 	{
@@ -208,6 +212,7 @@ Function CreateCertfile()
 		KeyLength = 2048;
 		HashAlgorithm = "SHA256";
 		KeyAlgorithm = "RSA";
+        KeyUsage = $CertUsages;
 	}
 
 	if($ChainCertificate -ne $null)
@@ -278,6 +283,15 @@ Function Display-SyntaxError()
 }
 
 ### Entrypoint ###
+if (Get-Module -ListAvailable -Name Microsoft.PowerShell.Security) 
+{
+    Write-Host "PKI Module exists"
+} 
+else 
+{
+    Write-Host "Module PKI could not be found" -ForegroundColor Red
+}
+
 if($args.Count -lt 1)
 {
 	Display-SyntaxError -Error "Usage $($MyInvocation.MyCommand.Name) <command>"
